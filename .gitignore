@@ -1,2 +1,7 @@
 *.zip
-*Captcha -20250613T230133Z-1-001*
+**/*captcha*/
+__pycache__/
+*.pyc
+*error*
+**/*page*/
+**/*selenium*/
