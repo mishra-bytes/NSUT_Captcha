@@ -2,9 +2,9 @@ import cv2
 import numpy as np
 import os
 
-INPUT_DIR = "Captcha -20250613T230133Z-1-001\Captcha"
-OUTPUT_DIR = "Captcha -20250613T230133Z-1-001\Preprocessed"
-TARGET_SIZE = (160, 60)
+INPUT_DIR = "captchas"
+OUTPUT_DIR = "Preprocessed"
+TARGET_SIZE = (210, 75)
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
