@@ -9,3 +9,9 @@ __pycache__/
 *.ipynb
 *captcha*
 *preprocess*
+captcha_download.ipynb
+captcha_read.py
+captcha_reading.ipynb
+preprocess.py
+preprocess_2.py
+model_train.py
