@@ -5,3 +5,6 @@ __pycache__/
 *error*
 **/*Processed_Techniques*/
 **/*Preprocessed*/
+
+*.ipynb
+*captcha*

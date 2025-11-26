@@ -1,0 +1,43 @@
+/* Main Background */
+.stApp {
+    background-color: #0e1117;
+}
+
+/* Sidebar */
+section[data-testid="stSidebar"] {
+    background-color: #161b22;
+    border-right: 1px solid #30363d;
+}
+
+/* Headers */
+h1, h2, h3 {
+    color: #f0f6fc !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Buttons */
+div.stButton > button {
+    background: linear-gradient(90deg, #238636 0%, #2ea043 100%);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+div.stButton > button:hover {
+    background: linear-gradient(90deg, #2ea043 0%, #3fb950 100%);
+    box-shadow: 0 4px 12px rgba(46, 160, 67, 0.4);
+    transform: translateY(-1px);
+}
+
+/* Inputs and Sliders */
+.stSlider > div > div > div > div {
+    background-color: #238636;
+}
+
+/* Cards/Containers */
+div[data-testid="stMetricValue"] {
+    color: #58a6ff;
+}
