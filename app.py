@@ -165,7 +165,7 @@ if mode == "Live Inference":
 # MODE 2: TRAINING STUDIO
 # ==========================================
 elif mode == "Training Studio":
-    st.header("# Model Training Studio")
+    st.header("Model Training Studio")
     st.markdown("Design your CNN architecture or use Bayesian Optimization to find the perfect hyperparameters.")
     
     # 1. DATA UPLOAD
@@ -235,7 +235,8 @@ elif mode == "Training Studio":
         # --- TAB 2: BAYESIAN ---
         with tab2:
             st.info("Bayesian Optimization uses probability to find the best hyperparameters intelligently.")
-            max_trials = st.slider("Max Trials (Model Variations)", 3, 10, 5)
+            st.info("PS : The more the number of trials , the more you'll have to wait. (About 1 min per trial.)")
+            max_trials = st.slider("Max Trials (Model Variations)", 5, 50, 10)
             start_bayes = st.button("Start Auto-Tuning")
             
             if start_bayes:
@@ -249,7 +250,7 @@ elif mode == "Training Studio":
                 )
                 
                 st.write("Searching for best architecture...")
-                tuner.search(X_train, y_train, epochs=5, validation_data=(X_test, y_test), verbose=0)
+                tuner.search(X_train, y_train, epochs=10, validation_data=(X_test, y_test), verbose=0)
                 
                 best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
                 st.json(best_hps.values)
