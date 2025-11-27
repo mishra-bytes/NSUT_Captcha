@@ -17,7 +17,7 @@ import training_utils
 # --- PAGE CONFIG ---
 st.set_page_config(
     page_title="CAPTCHArd",
-    page_icon="assets\logo.png",
+    page_icon="./assets/logo.png",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -28,7 +28,7 @@ with open('assets/style.css') as f:
 
 # --- SIDEBAR ---
 with st.sidebar:
-    st.title("assets\logo_white.png",width=300)
+    st.title("./assets/logo_white.png",width=300)
     st.markdown("---")
     mode = st.radio("Select Mode", ["Live Inference", "Training Studio"])
     st.markdown("---")
