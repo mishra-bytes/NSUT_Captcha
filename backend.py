@@ -67,7 +67,7 @@ def segment_characters_robust(cleaned_img):
                 digit_images.append(final_digit)
     return digit_images
 
-# --- CAPTCHA FETCHER (Refactored for Web App) ---
+# --- CAPTCHA FETCHER ---
 
 class CaptchaFetcher:
     def __init__(self):
@@ -87,27 +87,17 @@ class CaptchaFetcher:
         self.session.headers.update(headers)
 
     def fetch_single_image(self):
-        """Fetches a single captcha and returns the binary content."""
         try:
-            # 1. Init Session
             self.session.get('https://imsnsit.org/imsnsit/')
             self.session.get('https://www.imsnsit.org/imsnsit/student_login110.php')
-            
-            # 2. Go to Login Page
             login_url = 'https://www.imsnsit.org/imsnsit/student_login.php'
             response = self.session.get(login_url)
             soup = BeautifulSoup(response.text, 'html.parser')
-            
             captcha_img = soup.find('img', {'id': 'captchaimg'})
-            if not captcha_img:
-                return None, "Captcha element not found."
-
-            # 3. Download Image
+            if not captcha_img: return None, "Captcha element not found."
             captcha_url = urljoin(login_url, captcha_img['src'])
             img_response = self.session.get(captcha_url, headers={'Referer': login_url})
-            
             return img_response.content, None
-            
         except Exception as e:
             return None, str(e)
 
@@ -116,24 +106,17 @@ class CaptchaFetcher:
 def predict_sequence(model, digit_images):
     if len(digit_images) != 5:
         return "Error: Segmentation Failed"
-    
-    # Batch processing
     batch = np.array(digit_images) / 255.0
     batch = np.expand_dims(batch, axis=-1)
-    
     preds = model.predict(batch, verbose=0)
     pred_indices = np.argmax(preds, axis=1)
-    
     return "".join(map(str, pred_indices))
 
 @st.cache_resource
 def load_pretrained_model():
-    """
-    Loads the model efficiently. 
-    @st.cache_resource ensures the model is loaded only ONCE per server restart,
-    not per user session.
-    """
-    model_path = './model/final_captcha_model.h5'
+    # UPDATED PATH: Looks inside the 'model' directory
+    model_path = os.path.join('model', 'final_captcha_model.h5')
+    
     if os.path.exists(model_path):
         try:
             model = tf.keras.models.load_model(model_path)

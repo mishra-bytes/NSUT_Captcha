@@ -28,7 +28,12 @@ with open('assets/style.css') as f:
 
 # --- SIDEBAR ---
 with st.sidebar:
-    st.image("./assets/logo_white.png", width=300)
+    # Check if logo exists to avoid errors if assets missing
+    if os.path.exists("./assets/logo_white.png"):
+        st.image("./assets/logo_white.png", width=300)
+    else:
+        st.title("CAPTCHArd")
+        
     st.markdown("---")
     mode = st.radio("Select Mode", ["Live Inference", "Training Studio"])
     st.markdown("---")
@@ -76,6 +81,26 @@ def load_uploaded_dataset(uploaded_file):
                         
     return np.array(data), np.array(labels), valid_count
 
+#Helper function to save model safely
+def save_and_update_model(model):
+    """Saves model to the 'model' directory, creating it if needed."""
+    try:
+        # 1. Create directory if it doesn't exist
+        os.makedirs('model', exist_ok=True)
+        
+        # 2. Construct path
+        save_path = os.path.join('model', 'final_captcha_model.h5')
+        
+        # 3. Save
+        model.save(save_path)
+        
+        # 4. Update session state
+        st.session_state.model = model
+        st.toast(f"Model saved to {save_path}! It will be preloaded next time.")
+        st.success("✅ Model saved successfully.")
+    except Exception as e:
+        st.error(f"Failed to save model: {e}")
+
 # ==========================================
 # MODE 1: LIVE INFERENCE
 # ==========================================
@@ -84,12 +109,15 @@ if mode == "Live Inference":
     st.markdown("Fetch a real-time captcha from the source, segment it, and predict using the loaded model.")
     
     col_status, col_btn = st.columns([3, 1])
-    
+    state = True
     with col_status:
-        if st.session_state.model is not None:
-            st.success("✅ Model Loaded and Ready (Preloaded)")
+        if st.session_state.model is not None and state==True:
+            st.success("✅ Model Preloaded")
+            state = False 
+        elif st.session_state.model is not None and state==False: 
+            st.success("✅ Model Loaded and Ready")   
         else:
-            st.warning(" No Model Found! Upload 'final_captcha_model.h5' to your repo or train in Train Studio.")
+            st.warning("No Model Found! Upload 'final_captcha_model.h5' to 'model/' folder or train in Studio.")
 
     with col_btn:
         fetch_btn = st.button("Fetch Live Captcha", use_container_width=True)
@@ -173,20 +201,12 @@ elif mode == "Training Studio":
                 lr_slider = st.slider(
                     "Learning Rate (Slider)",
                     min_value=0.00001,
-                    max_value=2.0,
+                    max_value=0.01, # Fixed realistic max for slider
                     step=0.00001,
                     value=0.001,
                     format="%.5f"
                 )
-                lr_input = st.number_input(
-                    "Learning Rate (Input Box)",
-                    min_value=0.00001,
-                    max_value=2.0,
-                    step=0.00001,
-                    value=lr_slider,
-                    format="%.10f"
-                )
-                lr = lr_input
+                lr = lr_slider
             with col2:
                 f2 = st.slider("Conv Layer 2 Filters", 32, 128, 64, step=32)
                 epochs = st.slider("Epochs", 5, 50, 10)
@@ -210,9 +230,7 @@ elif mode == "Training Studio":
                         verbose=0
                     )
                 st.success("Training Complete!")
-                st.session_state.model = model
-                model.save('./model/final_captcha_model.h5')
-                st.toast("Model saved to disk! It will now be preloaded.")
+                save_and_update_model(model)
                 
         # --- TAB 2: BAYESIAN ---
         with tab2:
@@ -231,7 +249,6 @@ elif mode == "Training Studio":
                 )
                 
                 st.write("Searching for best architecture...")
-                # We can't plot live easily during search, but we can show results
                 tuner.search(X_train, y_train, epochs=5, validation_data=(X_test, y_test), verbose=0)
                 
                 best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
@@ -249,9 +266,7 @@ elif mode == "Training Studio":
                     verbose=0
                 )
                 st.success("Auto-Tuning Complete!")
-                st.session_state.model = model
-                model.save('./model/final_captcha_model.h5')
-                st.toast("Model saved to disk! It will now be preloaded.")
+                save_and_update_model(model)
 
     else:
         st.info("Please upload a dataset (ZIP of images) to unlock the Training Studio.")
