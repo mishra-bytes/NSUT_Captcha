@@ -184,7 +184,7 @@ elif mode == "Training Studio":
                     max_value=2.0,
                     step=0.00001,
                     value=lr_slider,
-                    format="%.5f"
+                    format="%.10f"
                 )
                 lr = lr_input
             with col2:
