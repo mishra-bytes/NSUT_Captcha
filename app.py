@@ -28,8 +28,7 @@ with open('assets/style.css') as f:
 
 # --- SIDEBAR ---
 with st.sidebar:
-    st.image("assets/logo_white.png", width=300)
-    
+    st.title("assets\logo_white.png",width=300)
     st.markdown("---")
     mode = st.radio("Select Mode", ["Live Inference", "Training Studio"])
     st.markdown("---")
@@ -38,8 +37,10 @@ with st.sidebar:
     st.caption("Developed with TensorFlow & OpenCV")
 
 # --- SESSION STATE INITIALIZATION ---
-if 'model' not in st.session_state:
+# Try to load the model immediately on startup using the cached function
+if 'model' not in st.session_state or st.session_state.model is None:
     st.session_state.model = backend.load_pretrained_model()
+
 if 'dataset_uploaded' not in st.session_state:
     st.session_state.dataset_uploaded = False
 
@@ -79,16 +80,16 @@ def load_uploaded_dataset(uploaded_file):
 # MODE 1: LIVE INFERENCE
 # ==========================================
 if mode == "Live Inference":
-    st.header("Live Captcha Solver")
+    st.header("🔮 Live Captcha Solver")
     st.markdown("Fetch a real-time captcha from the source, segment it, and predict using the loaded model.")
     
     col_status, col_btn = st.columns([3, 1])
     
     with col_status:
         if st.session_state.model is not None:
-            st.success("✅ Model Loaded and Ready")
+            st.success("✅ Model Loaded and Ready (Preloaded)")
         else:
-            st.warning("No Model Loaded! Please train one in the Studio or check file paths.")
+            st.warning(" No Model Found! Upload 'final_captcha_model.h5' to your repo or train in Train Studio.")
 
     with col_btn:
         fetch_btn = st.button("Fetch Live Captcha", use_container_width=True)
@@ -126,7 +127,7 @@ if mode == "Live Inference":
                 # Predict
                 if st.session_state.model:
                     prediction = backend.predict_sequence(st.session_state.model, digits)
-                    st.success(f"### Prediction: {prediction}")
+                    st.success(f"## Prediction: {prediction}")
                 else:
                     st.error("Model not loaded, cannot predict.")
             else:
@@ -136,7 +137,7 @@ if mode == "Live Inference":
 # MODE 2: TRAINING STUDIO
 # ==========================================
 elif mode == "Training Studio":
-    st.header("Model Training Studio")
+    st.header("# Model Training Studio")
     st.markdown("Design your CNN architecture or use Bayesian Optimization to find the perfect hyperparameters.")
     
     # 1. DATA UPLOAD
@@ -169,13 +170,29 @@ elif mode == "Training Studio":
             col1, col2, col3 = st.columns(3)
             with col1:
                 f1 = st.slider("Conv Layer 1 Filters", 16, 64, 32, step=16)
-                lr = st.select_slider("Learning Rate", options=[0.01, 0.001, 0.0001], value=0.001)
+                lr_slider = st.slider(
+                    "Learning Rate (Slider)",
+                    min_value=0.00001,
+                    max_value=2.0,
+                    step=0.00001,
+                    value=0.001,
+                    format="%.5f"
+                )
+                lr_input = st.number_input(
+                    "Learning Rate (Input Box)",
+                    min_value=0.00001,
+                    max_value=2.0,
+                    step=0.00001,
+                    value=lr_slider,
+                    format="%.5f"
+                )
+                lr = lr_input
             with col2:
                 f2 = st.slider("Conv Layer 2 Filters", 32, 128, 64, step=32)
                 epochs = st.slider("Epochs", 5, 50, 10)
             with col3:
-                dense = st.slider("Dense Units", 32, 256, 64, step=32)
-                dropout = st.slider("Dropout", 0.0, 0.5, 0.5)
+                dense = st.slider("Dense Units", 32, 512, 64, step=32)
+                dropout = st.slider("Dropout", 0.0, 0.8, 0.4)
             
             start_manual = st.button("Start Training (Manual)")
             
@@ -195,6 +212,7 @@ elif mode == "Training Studio":
                 st.success("Training Complete!")
                 st.session_state.model = model
                 model.save('final_captcha_model.h5')
+                st.toast("Model saved to disk! It will now be preloaded.")
                 
         # --- TAB 2: BAYESIAN ---
         with tab2:
@@ -233,6 +251,7 @@ elif mode == "Training Studio":
                 st.success("Auto-Tuning Complete!")
                 st.session_state.model = model
                 model.save('final_captcha_model.h5')
+                st.toast("Model saved to disk! It will now be preloaded.")
 
     else:
         st.info("Please upload a dataset (ZIP of images) to unlock the Training Studio.")

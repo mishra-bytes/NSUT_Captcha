@@ -7,6 +7,7 @@ import random
 import time
 import os
 import tensorflow as tf
+import streamlit as st
 
 # --- VISION PIPELINE (The Golden Logic) ---
 
@@ -125,8 +126,19 @@ def predict_sequence(model, digit_images):
     
     return "".join(map(str, pred_indices))
 
+@st.cache_resource
 def load_pretrained_model():
-    # In a real app, you would check if file exists
-    if os.path.exists('final_captcha_model.h5'):
-        return tf.keras.models.load_model('final_captcha_model.h5')
+    """
+    Loads the model efficiently. 
+    @st.cache_resource ensures the model is loaded only ONCE per server restart,
+    not per user session.
+    """
+    model_path = './model/final_captcha_model.h5'
+    if os.path.exists(model_path):
+        try:
+            model = tf.keras.models.load_model(model_path)
+            return model
+        except Exception as e:
+            st.error(f"Error loading model: {e}")
+            return None
     return None
