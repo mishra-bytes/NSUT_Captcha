@@ -1,43 +1,166 @@
-/* Main Background */
+/* --- FONTS --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* --- GLOBAL VARIABLES --- */
+:root {
+    --bg-color: #0E1117;
+    --card-bg: #161B22; /* Slightly lighter than bg */
+    --accent-color: #2EA043; /* GitHub Green-ish */
+    --accent-hover: #3FB950;
+    --text-primary: #F0F6FC;
+    --text-secondary: #8B949E;
+    --border-color: #30363D;
+    --glass-border: rgba(240, 246, 252, 0.1);
+}
+
+/* --- MAIN CONTAINER --- */
 .stApp {
-    background-color: #0e1117;
+    background-color: var(--bg-color);
+    font-family: 'Inter', sans-serif;
 }
 
-/* Sidebar */
+/* --- SIDEBAR --- */
 section[data-testid="stSidebar"] {
-    background-color: #161b22;
-    border-right: 1px solid #30363d;
+    background-color: var(--card-bg);
+    border-right: 1px solid var(--border-color);
+    box-shadow: 2px 0 10px rgba(0,0,0,0.3);
 }
 
-/* Headers */
-h1, h2, h3 {
-    color: #f0f6fc !important;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+/* --- TYPOGRAPHY --- */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.5px;
 }
 
-/* Buttons */
+p, div, label, span {
+    color: var(--text-primary); /* Default text color */
+    font-family: 'Inter', sans-serif;
+}
+
+.stMarkdown p {
+    color: var(--text-secondary); /* Description text */
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+/* --- BUTTONS --- */
+/* Primary Action Buttons */
 div.stButton > button {
-    background: linear-gradient(90deg, #238636 0%, #2ea043 100%);
+    background: linear-gradient(135deg, var(--accent-color) 0%, #238636 100%);
     color: white;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
     font-weight: 600;
-    transition: all 0.3s ease;
+    font-size: 0.95rem;
+    letter-spacing: 0.3px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 div.stButton > button:hover {
-    background: linear-gradient(90deg, #2ea043 0%, #3fb950 100%);
-    box-shadow: 0 4px 12px rgba(46, 160, 67, 0.4);
-    transform: translateY(-1px);
+    background: linear-gradient(135deg, var(--accent-hover) 0%, #2ea043 100%);
+    box-shadow: 0 8px 15px rgba(46, 160, 67, 0.3);
+    transform: translateY(-2px);
+    border-color: rgba(255,255,255,0.3);
 }
 
-/* Inputs and Sliders */
+div.stButton > button:active {
+    transform: translateY(0px);
+}
+
+/* --- INPUTS & WIDGETS --- */
+/* Text Inputs, Select Boxes */
+div[data-baseweb="input"] > div, 
+div[data-baseweb="select"] > div {
+    background-color: #0d1117 !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    color: white !important;
+}
+
+/* File Uploader */
+section[data-testid="stFileUploader"] {
+    background-color: #0d1117;
+    border: 1px dashed var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    transition: border-color 0.3s;
+}
+
+section[data-testid="stFileUploader"]:hover {
+    border-color: var(--accent-color);
+}
+
+/* Sliders */
+div[data-baseweb="slider"] div[role="slider"] {
+    background-color: var(--accent-color) !important;
+    box-shadow: 0 0 10px rgba(46, 160, 67, 0.5);
+}
+
 .stSlider > div > div > div > div {
-    background-color: #238636;
+    background-color: var(--accent-color) !important;
 }
 
-/* Cards/Containers */
+/* --- TABS --- */
+div[data-baseweb="tab-list"] {
+    gap: 8px;
+    background-color: transparent;
+}
+
+div[data-baseweb="tab"] {
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 8px 16px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+div[data-baseweb="tab"]:hover {
+    color: var(--text-primary);
+    background-color: rgba(255,255,255,0.05);
+}
+
+div[data-baseweb="tab"][aria-selected="true"] {
+    background-color: #21262d;
+    border: 1px solid var(--border-color);
+    color: var(--accent-color);
+    font-weight: 600;
+}
+
+/* --- CARDS & METRICS --- */
+/* Create a card-like effect for metrics/charts if needed */
+div[data-testid="stMetric"] {
+    background-color: #0d1117;
+    border: 1px solid var(--border-color);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+div[data-testid="stMetricLabel"] {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
 div[data-testid="stMetricValue"] {
-    color: #58a6ff;
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 1.8rem;
+}
+
+/* --- ALERTS --- */
+div[data-baseweb="notification"] {
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* --- IMAGES --- */
+img {
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
