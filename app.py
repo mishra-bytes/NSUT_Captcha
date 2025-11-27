@@ -28,7 +28,7 @@ with open('assets/style.css') as f:
 
 # --- SIDEBAR ---
 with st.sidebar:
-    st.title("./assets/logo_white.png",width=300)
+    st.image("./assets/logo_white.png", width=300)
     st.markdown("---")
     mode = st.radio("Select Mode", ["Live Inference", "Training Studio"])
     st.markdown("---")
