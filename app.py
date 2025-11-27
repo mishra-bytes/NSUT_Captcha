@@ -199,6 +199,7 @@ if mode == "Live Inference":
     
     # Main Card Container
     with st.container():
+        # Adjusted column ratio and alignment logic
         col_status, col_btn = st.columns([2, 1])
         
         with col_status:
@@ -208,6 +209,8 @@ if mode == "Live Inference":
                 st.error("⚠️ **System Offline:** No model found. Please train in Studio.")
                 
         with col_btn:
+            # FIX: Added Spacer to push button down to align with the Status box
+            st.markdown('<div style="height: 6px;"></div>', unsafe_allow_html=True)
             fetch_btn = st.button("FETCH CAPTCHA", use_container_width=True)
 
         if fetch_btn:
@@ -227,10 +230,12 @@ if mode == "Live Inference":
                 col_a, col_b = st.columns(2)
                 with col_a:
                     st.caption("Raw Source")
-                    st.image(original_img, use_column_width=True)
+                    # FIX: Replaced use_column_width with use_container_width
+                    st.image(original_img, use_container_width=True)
                 with col_b:
                     st.caption("Processed Binary")
-                    st.image(cleaned, use_column_width=True)
+                    # FIX: Replaced use_column_width with use_container_width
+                    st.image(cleaned, use_container_width=True)
                     
                 digits = backend.segment_characters_robust(cleaned)
                 
@@ -239,7 +244,8 @@ if mode == "Live Inference":
                     cols = st.columns(5)
                     for i, d in enumerate(digits):
                         with cols[i]:
-                            st.image(d, use_column_width=True)
+                            # FIX: Replaced use_column_width with use_container_width
+                            st.image(d, use_container_width=True)
                     
                     if st.session_state.model:
                         prediction = backend.predict_sequence(st.session_state.model, digits)
