@@ -20,9 +20,113 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Load CSS
-with open('assets/style.css') as f:
-    st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+# --- EMBEDDED CSS (ROBUST FIX) ---
+# We inject this directly to ensure it overrides Streamlit's default Dark Mode text colors.
+st.markdown("""
+<style>
+    /* --- GOOGLE FONTS --- */
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+    /* --- GLOBAL TEXT OVERRIDES (Fixes Invisible Text) --- */
+    html, body, [class*="css"] {
+        font-family: 'Roboto', sans-serif;
+    }
+    
+    /* Force main background to Light Grey */
+    .stApp {
+        background-color: #F8F9FA;
+    }
+
+    /* --- SIDEBAR STYLING --- */
+    section[data-testid="stSidebar"] {
+        background-color: #FFFFFF;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+    }
+    
+    /* CRITICAL: Force all Sidebar text to be Dark Grey (Overrides Dark Mode White Text) */
+    [data-testid="stSidebar"] * {
+        color: #202124 !important;
+    }
+    
+    /* Fix specific Radio Button Label visibility */
+    [data-testid="stSidebar"] div[data-baseweb="radio"] p {
+        color: #202124 !important;
+        font-weight: 500;
+        font-size: 0.95rem;
+    }
+
+    /* --- HEADERS & TITLES --- */
+    h1, h2, h3, h4, h5, h6 {
+        color: #202124 !important;
+        font-weight: 500 !important;
+    }
+    
+    p, span, div {
+        color: #202124;
+    }
+
+    /* --- CARDS / CONTAINERS --- */
+    /* We create a 'Card' class for custom divs */
+    .css-card {
+        background-color: #FFFFFF;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        margin-bottom: 2rem;
+        border: 1px solid #E0E0E0;
+    }
+
+    /* --- BUTTONS --- */
+    div.stButton > button {
+        background-color: #1A73E8; /* Google Blue */
+        color: white !important;
+        border: none;
+        padding: 0.6rem 1.5rem;
+        border-radius: 6px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.2s;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        width: 100%;
+    }
+
+    div.stButton > button:hover {
+        background-color: #1557B0;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        transform: translateY(-1px);
+        color: white !important;
+    }
+    
+    /* --- METRICS & STATUS --- */
+    div[data-testid="stMetric"] {
+        background-color: white;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #E0E0E0;
+    }
+    
+    div[data-testid="stMetricValue"] {
+        color: #1A73E8 !important; /* Blue numbers */
+    }
+    
+    /* --- TAB STYLING --- */
+    div[data-baseweb="tab-list"] {
+        gap: 20px;
+        background-color: transparent;
+    }
+    
+    div[data-baseweb="tab"] {
+        color: #5F6368;
+    }
+    
+    div[data-baseweb="tab"][aria-selected="true"] {
+        color: #1A73E8;
+        border-bottom-color: #1A73E8;
+    }
+
+</style>
+""", unsafe_allow_html=True)
 
 # --- SIDEBAR ---
 with st.sidebar:
@@ -85,10 +189,10 @@ def save_and_update_model(model):
 # MODE 1: LIVE INFERENCE
 # ==========================================
 if mode == "Live Inference":
-    # Custom Hero Header
+    # Custom Hero Header (Using our new css-card class)
     st.markdown("""
-        <div style='background-color: white; padding: 1.5rem; border-radius: 10px; margin-bottom: 2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05);'>
-            <h1 style='margin:0; color: #1A73E8; font-size: 2.2rem;'>🔮 Live Captcha Solver</h1>
+        <div class="css-card">
+            <h1 style='margin:0; color: #1A73E8 !important; font-size: 2.2rem;'>🔮 Live Captcha Solver</h1>
             <p style='margin:0; color: #5F6368;'>Connect to the source, segment digits, and predict sequence in real-time.</p>
         </div>
     """, unsafe_allow_html=True)
@@ -141,7 +245,7 @@ if mode == "Live Inference":
                         prediction = backend.predict_sequence(st.session_state.model, digits)
                         st.markdown(f"""
                         <div style='background-color: #E8F0FE; padding: 1rem; border-radius: 8px; text-align: center; margin-top: 1rem; border: 1px solid #1A73E8;'>
-                            <h2 style='margin:0; color: #1A73E8; font-family: monospace; letter-spacing: 4px;'>{prediction}</h2>
+                            <h2 style='margin:0; color: #1A73E8 !important; font-family: monospace; letter-spacing: 4px;'>{prediction}</h2>
                             <small style='color: #1A73E8;'>CONFIDENCE SCORE: 99.8%</small>
                         </div>
                         """, unsafe_allow_html=True)
@@ -153,8 +257,8 @@ if mode == "Live Inference":
 # ==========================================
 elif mode == "Training Studio":
     st.markdown("""
-        <div style='background-color: white; padding: 1.5rem; border-radius: 10px; margin-bottom: 2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05);'>
-            <h1 style='margin:0; color: #1A73E8; font-size: 2.2rem;'>🛠️ Training Studio</h1>
+        <div class="css-card">
+            <h1 style='margin:0; color: #1A73E8 !important; font-size: 2.2rem;'>🛠️ Training Studio</h1>
             <p style='margin:0; color: #5F6368;'>Design, Train, and Optimize your CNN Architecture.</p>
         </div>
     """, unsafe_allow_html=True)
