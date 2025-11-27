@@ -250,7 +250,7 @@ elif mode == "Training Studio":
                 )
                 st.success("Auto-Tuning Complete!")
                 st.session_state.model = model
-                model.save('final_captcha_model.h5')
+                model.save('./model/final_captcha_model.h5')
                 st.toast("Model saved to disk! It will now be preloaded.")
 
     else:

@@ -21,3 +21,4 @@ model_train.py
 *bg*
 *try*
 *test*
+!final_captcha_model.h5
