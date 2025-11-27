@@ -16,8 +16,8 @@ import training_utils
 
 # --- PAGE CONFIG ---
 st.set_page_config(
-    page_title="NeuroCaptcha | Advanced Solver",
-    page_icon="🧠",
+    page_title="CAPTCHArd",
+    page_icon="assets\logo.png",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -28,7 +28,8 @@ with open('assets/style.css') as f:
 
 # --- SIDEBAR ---
 with st.sidebar:
-    st.title("🧠 NeuroCaptcha")
+    st.image("assets/logo_white.png", width=300)
+    
     st.markdown("---")
     mode = st.radio("Select Mode", ["Live Inference", "Training Studio"])
     st.markdown("---")
@@ -78,7 +79,7 @@ def load_uploaded_dataset(uploaded_file):
 # MODE 1: LIVE INFERENCE
 # ==========================================
 if mode == "Live Inference":
-    st.header("🔮 Live Captcha Solver")
+    st.header("Live Captcha Solver")
     st.markdown("Fetch a real-time captcha from the source, segment it, and predict using the loaded model.")
     
     col_status, col_btn = st.columns([3, 1])
@@ -87,7 +88,7 @@ if mode == "Live Inference":
         if st.session_state.model is not None:
             st.success("✅ Model Loaded and Ready")
         else:
-            st.warning("⚠️ No Model Loaded. Please train one in the Studio or check file paths.")
+            st.warning("No Model Loaded! Please train one in the Studio or check file paths.")
 
     with col_btn:
         fetch_btn = st.button("Fetch Live Captcha", use_container_width=True)
@@ -125,7 +126,7 @@ if mode == "Live Inference":
                 # Predict
                 if st.session_state.model:
                     prediction = backend.predict_sequence(st.session_state.model, digits)
-                    st.success(f"### 🤖 Prediction: {prediction}")
+                    st.success(f"### Prediction: {prediction}")
                 else:
                     st.error("Model not loaded, cannot predict.")
             else:
@@ -135,7 +136,7 @@ if mode == "Live Inference":
 # MODE 2: TRAINING STUDIO
 # ==========================================
 elif mode == "Training Studio":
-    st.header("🛠️ Model Training Studio")
+    st.header("Model Training Studio")
     st.markdown("Design your CNN architecture or use Bayesian Optimization to find the perfect hyperparameters.")
     
     # 1. DATA UPLOAD
@@ -176,7 +177,7 @@ elif mode == "Training Studio":
                 dense = st.slider("Dense Units", 32, 256, 64, step=32)
                 dropout = st.slider("Dropout", 0.0, 0.5, 0.5)
             
-            start_manual = st.button("🚀 Start Training (Manual)")
+            start_manual = st.button("Start Training (Manual)")
             
             if start_manual:
                 model = training_utils.build_manual_model(f1, f2, dense, dropout, lr)
@@ -199,7 +200,7 @@ elif mode == "Training Studio":
         with tab2:
             st.info("Bayesian Optimization uses probability to find the best hyperparameters intelligently.")
             max_trials = st.slider("Max Trials (Model Variations)", 3, 10, 5)
-            start_bayes = st.button("✨ Start Auto-Tuning")
+            start_bayes = st.button("Start Auto-Tuning")
             
             if start_bayes:
                 tuner = kt.BayesianOptimization(
@@ -234,4 +235,4 @@ elif mode == "Training Studio":
                 model.save('final_captcha_model.h5')
 
     else:
-        st.info("👆 Please upload a dataset (ZIP of images) to unlock the Training Studio.")
+        st.info("Please upload a dataset (ZIP of images) to unlock the Training Studio.")

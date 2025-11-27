@@ -15,3 +15,9 @@ captcha_reading.ipynb
 preprocess.py
 preprocess_2.py
 model_train.py
+*.png
+*.jpeg
+*.jpg 
+*bg*
+*try*
+*test*
