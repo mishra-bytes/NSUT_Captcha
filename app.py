@@ -28,7 +28,7 @@ with open('assets/style.css') as f:
 
 # --- SIDEBAR ---
 with st.sidebar:
-    st.title(".\assets\logo_white.png",width=300)
+    st.title("./assets/logo_white.png",width=300)
     st.markdown("---")
     mode = st.radio("Select Mode", ["Live Inference", "Training Studio"])
     st.markdown("---")
@@ -80,7 +80,7 @@ def load_uploaded_dataset(uploaded_file):
 # MODE 1: LIVE INFERENCE
 # ==========================================
 if mode == "Live Inference":
-    st.header("🔮 Live Captcha Solver")
+    st.header("CAPTCHArd : The Live Captcha Solver")
     st.markdown("Fetch a real-time captcha from the source, segment it, and predict using the loaded model.")
     
     col_status, col_btn = st.columns([3, 1])
@@ -169,7 +169,7 @@ elif mode == "Training Studio":
         with tab1:
             col1, col2, col3 = st.columns(3)
             with col1:
-                f1 = st.slider("Conv Layer 1 Filters", 16, 64, 32, step=16)
+                f1 = st.slider("Conv Layer 1 Filters", 16, 128, 32, step=16)
                 lr_slider = st.slider(
                     "Learning Rate (Slider)",
                     min_value=0.00001,
