@@ -167,6 +167,7 @@ with st.sidebar:
     
     st.write("") 
     st.caption("v3.0 Final Version")
+    st.caption("Made with &#9829; by Aditya Mishra")
 
 if 'model' not in st.session_state or st.session_state.model is None:
     st.session_state.model = backend.load_pretrained_model()
@@ -210,8 +211,8 @@ if mode == "Live Dashboard":
     
     st.markdown("""
     <div style="margin-bottom: 2rem;">
-        <h1 style="margin-bottom: 0.5rem;">Live Inference Dashboard</h1>
-        <p style="color: #64748B;">Real-time computer vision pipeline for security analysis.</p>
+        <h1 style="margin-bottom: 0.5rem;">Live CAPTCHA Inference Dashboard</h1>
+        <p style="color: #64748B;">This Computer Vision project fetches a CAPTCHA from the official site of NSUT UMS , and then applies an original segmentation technique and tries to identify the correct sequence using purely Convolution based Neural Networks .</p>    
     </div>
     """, unsafe_allow_html=True)
 
