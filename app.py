@@ -10,22 +10,18 @@ import base64
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import to_categorical
 
-# Import our custom modules
 import backend
 import training_utils
 
-# --- PAGE CONFIG ---
 st.set_page_config(
     page_title="CAPTCHArd",
-    page_icon="assets/logo.png",
+    page_icon="assets/logo_white.png",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- PROFESSIONAL GLASSMORPHISM THEME ---
 st.markdown("""
 <style>
-    /* FONTS */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -49,7 +45,6 @@ st.markdown("""
         background-attachment: fixed;
     }
 
-    /* SIDEBAR */
     section[data-testid="stSidebar"] {
         background-color: rgba(255, 255, 255, 0.9);
         backdrop-filter: blur(10px);
@@ -60,7 +55,6 @@ st.markdown("""
         color: var(--text-main) !important;
     }
 
-    /* GLASS CARDS */
     .glass-card {
         background: var(--glass-bg);
         backdrop-filter: blur(16px);
@@ -70,10 +64,9 @@ st.markdown("""
         padding: 24px;
         box-shadow: var(--glass-shadow);
         margin-bottom: 24px;
-        height: 100%; /* Important for alignment */
+        height: 100%;
     }
 
-    /* TYPOGRAPHY */
     .section-title {
         font-size: 0.875rem;
         text-transform: uppercase;
@@ -83,13 +76,12 @@ st.markdown("""
         margin-bottom: 1rem;
     }
 
-    /* BUTTONS */
     div.stButton > button {
         background-color: var(--primary);
         color: white !important;
         border: none;
         border-radius: 8px;
-        padding: 0.75rem 1.25rem; /* Larger padding for better touch targets */
+        padding: 0.75rem 1.25rem;
         font-weight: 500;
         font-size: 0.95rem;
         transition: all 0.2s;
@@ -103,7 +95,6 @@ st.markdown("""
         box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
     }
 
-    /* PREDICTION BOX */
     .prediction-display {
         background: white;
         border: 1px solid #E2E8F0;
@@ -133,13 +124,10 @@ st.markdown("""
         font-weight: 600;
     }
 
-    /* IMAGES */
     img {
         border-radius: 8px;
     }
     
-    /* FIX FOR INPUTS */
-    /* Target only text inputs, not everything */
     div[data-baseweb="input"] {
         background-color: white;
         border-radius: 6px;
@@ -148,7 +136,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- HELPER: CUSTOM LOADER ---
 def render_custom_loader():
     file_path = "assets/loading.gif"
     if os.path.exists(file_path):
@@ -160,13 +147,11 @@ def render_custom_loader():
         )
     return st.spinner("Processing...")
 
-# --- HELPER: IMAGE TO HTML ---
 def get_image_html(img_array):
     _, buffer = cv2.imencode('.png', img_array)
     b64 = base64.b64encode(buffer).decode('utf-8')
     return f"data:image/png;base64,{b64}"
 
-# --- SIDEBAR ---
 with st.sidebar:
     if os.path.exists("./assets/full_logo_colour.png"):
         st.image("./assets/full_logo_colour.png", use_container_width=True)
@@ -180,18 +165,15 @@ with st.sidebar:
     st.markdown('<p class="section-title" style="margin-bottom: 0.5rem;">Platform</p>', unsafe_allow_html=True)
     mode = st.radio("Platform", ["Live Dashboard", "Training Studio"], label_visibility="collapsed")
     
-    # Removed the markdown "---" separator as it was causing the artifact box
     st.write("") 
-    st.caption("v3.0 Enterprise Edition")
+    st.caption("v3.0 Final Version")
 
-# --- INIT SESSION ---
 if 'model' not in st.session_state or st.session_state.model is None:
     st.session_state.model = backend.load_pretrained_model()
 
 if 'dataset_uploaded' not in st.session_state:
     st.session_state.dataset_uploaded = False
 
-# --- UTILS ---
 def load_uploaded_dataset(uploaded_file):
     with zipfile.ZipFile(uploaded_file, 'r') as z:
         z.extractall("temp_dataset")
@@ -224,9 +206,6 @@ def save_and_update_model(model):
     except Exception as e:
         st.error(f"Save failed: {e}")
 
-# =========================================================
-#  MODE 1: LIVE DASHBOARD
-# =========================================================
 if mode == "Live Dashboard":
     
     st.markdown("""
@@ -236,19 +215,15 @@ if mode == "Live Dashboard":
     </div>
     """, unsafe_allow_html=True)
 
-    # --- ACTION BAR ---
-    # We use vertical_alignment="center" to perfectly align the button with the text box
     col_status, col_action = st.columns([3, 1], gap="medium", vertical_alignment="center")
     
     with col_status:
-        # Generate the status HTML content in Python
         status_content = ""
         if st.session_state.model:
             status_content = '<span style="color: #166534; font-weight: 500;">● Online</span>: Model loaded and ready for inference.'
         else:
             status_content = '<span style="color: #DC2626; font-weight: 500;">● Offline</span>: No model detected.'
             
-        # Render the ENTIRE card in one go. No split markdown.
         st.markdown(f"""
         <div class="glass-card" style="padding: 20px; display: flex; align-items: center; justify-content: space-between;">
             <div>
@@ -259,13 +234,11 @@ if mode == "Live Dashboard":
         """, unsafe_allow_html=True)
 
     with col_action:
-        # Button stands alone (no wrapping div to break it)
         if st.button("Fetch Captcha", use_container_width=True):
             st.session_state.trigger_fetch = True
         else:
             st.session_state.trigger_fetch = False
 
-    # --- MAIN VISUAL STAGE ---
     if st.session_state.get('trigger_fetch'):
         
         loader_ph = st.empty()
@@ -284,13 +257,11 @@ if mode == "Live Dashboard":
             original_img = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE)
             _, cleaned = backend.preprocess_captcha_v2(io.BytesIO(img_bytes))
             
-            # Use columns for layout
             col_visuals, col_prediction = st.columns([2, 1], gap="large")
             
             with col_visuals:
                 digits = backend.segment_characters_robust(cleaned)
                 
-                # HTML Construction for images
                 src_html = get_image_html(original_img)
                 bin_html = get_image_html(cleaned)
                 
@@ -299,7 +270,6 @@ if mode == "Live Dashboard":
                     for d in digits:
                         digits_divs += f'<div style="flex: 1; text-align: center;"><img src="{get_image_html(d)}" style="width: 100%; border-radius: 4px; border: 1px solid #E2E8F0;"></div>'
                 
-                # Render Visuals Card
                 st.markdown(f"""
                 <div class="glass-card">
                     <p class="section-title">Visual Analysis</p>
@@ -324,7 +294,6 @@ if mode == "Live Dashboard":
             with col_prediction:
                 if len(digits) == 5 and st.session_state.model:
                     prediction = backend.predict_sequence(st.session_state.model, digits)
-                    # Render Prediction Card
                     st.markdown(f"""
                     <div class="glass-card">
                         <p class="section-title">Inference</p>
@@ -337,9 +306,6 @@ if mode == "Live Dashboard":
                 else:
                     st.warning("Segmentation Failed")
 
-# =========================================================
-#  MODE 2: TRAINING STUDIO
-# =========================================================
 elif mode == "Training Studio":
     st.markdown("""
     <div style="margin-bottom: 2rem;">
@@ -348,8 +314,6 @@ elif mode == "Training Studio":
     </div>
     """, unsafe_allow_html=True)
     
-    # 1. DATASET
-    # Using a clean Markdown block for the header, no split divs
     st.markdown("""
     <div class="glass-card" style="margin-bottom: 20px;">
         <p class="section-title" style="margin-bottom: 10px;">Data Ingestion</p>
@@ -383,12 +347,10 @@ elif mode == "Training Studio":
         
         st.markdown('<div style="height: 20px;"></div>', unsafe_allow_html=True)
         
-        # Tabs container
         tab1, tab2 = st.tabs(["Manual Tuning", "Bayesian Optimization"])
         
         with tab1:
             st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
-            # We use st.container to group controls, keeping them out of tricky HTML
             with st.container():
                 c1, c2, c3 = st.columns(3)
                 with c1:
@@ -401,7 +363,7 @@ elif mode == "Training Studio":
                     dropout = st.slider("Dropout", 0.0, 0.8, 0.5)
                 with c3:
                     st.markdown("**Training**")
-                    lr = st.number_input("Learning Rate", value=0.001, format="%.4f")
+                    lr = st.number_input("Learning Rate", value=0.0001, format="%.10f")
                     epochs = st.slider("Epochs", 5, 50, 10)
                 
                 st.markdown("---")
@@ -422,7 +384,7 @@ elif mode == "Training Studio":
                 trials = st.slider("Max Trials", 5, 50, 10)
             
             with col_run:
-                st.markdown("<br>", unsafe_allow_html=True) # Spacer for alignment
+                st.markdown("<br>", unsafe_allow_html=True)
                 if st.button("Start Auto-Tuning", use_container_width=True):
                     if os.path.exists('my_dir'): shutil.rmtree('my_dir')
                     col_stat, col_chart = st.columns([1, 2])
