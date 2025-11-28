@@ -5,6 +5,8 @@ import os
 import zipfile
 import io
 import shutil
+import time
+import base64
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import to_categorical
 
@@ -14,134 +16,175 @@ import training_utils
 
 # --- PAGE CONFIG ---
 st.set_page_config(
-    page_title="CAPTCHArd | AI Solver",
-    page_icon="🧠",
+    page_title="CAPTCHArd",
+    page_icon="assets/logo.png",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- EMBEDDED CSS (ROBUST FIX) ---
-# We inject this directly to ensure it overrides Streamlit's default Dark Mode text colors.
+# --- PROFESSIONAL GLASSMORPHISM THEME ---
 st.markdown("""
 <style>
-    /* --- GOOGLE FONTS --- */
-    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+    /* FONTS */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
 
-    /* --- GLOBAL TEXT OVERRIDES (Fixes Invisible Text) --- */
+    :root {
+        --primary: #2563EB;
+        --primary-hover: #1D4ED8;
+        --text-main: #1E293B;
+        --text-sub: #64748B;
+        --glass-bg: rgba(255, 255, 255, 0.75);
+        --glass-border: 1px solid rgba(255, 255, 255, 0.5);
+        --glass-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+
     html, body, [class*="css"] {
-        font-family: 'Roboto', sans-serif;
+        font-family: 'Inter', sans-serif;
+        color: var(--text-main);
     }
-    
-    /* Force main background to Light Grey */
+
     .stApp {
-        background-color: #F8F9FA;
+        background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%);
+        background-attachment: fixed;
     }
 
-    /* --- SIDEBAR STYLING --- */
+    /* SIDEBAR */
     section[data-testid="stSidebar"] {
-        background-color: #FFFFFF;
-        box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+        background-color: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        border-right: 1px solid rgba(226, 232, 240, 0.8);
     }
     
-    /* CRITICAL: Force all Sidebar text to be Dark Grey (Overrides Dark Mode White Text) */
     [data-testid="stSidebar"] * {
-        color: #202124 !important;
-    }
-    
-    /* Fix specific Radio Button Label visibility */
-    [data-testid="stSidebar"] div[data-baseweb="radio"] p {
-        color: #202124 !important;
-        font-weight: 500;
-        font-size: 0.95rem;
+        color: var(--text-main) !important;
     }
 
-    /* --- HEADERS & TITLES --- */
-    h1, h2, h3, h4, h5, h6 {
-        color: #202124 !important;
-        font-weight: 500 !important;
-    }
-    
-    p, span, div {
-        color: #202124;
-    }
-
-    /* --- CARDS / CONTAINERS --- */
-    /* We create a 'Card' class for custom divs */
-    .css-card {
-        background-color: #FFFFFF;
-        padding: 2rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        margin-bottom: 2rem;
-        border: 1px solid #E0E0E0;
+    /* GLASS CARDS */
+    .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: var(--glass-border);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: var(--glass-shadow);
+        margin-bottom: 24px;
+        height: 100%; /* Important for alignment */
     }
 
-    /* --- BUTTONS --- */
+    /* TYPOGRAPHY */
+    .section-title {
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-sub);
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    /* BUTTONS */
     div.stButton > button {
-        background-color: #1A73E8; /* Google Blue */
+        background-color: var(--primary);
         color: white !important;
         border: none;
-        padding: 0.6rem 1.5rem;
-        border-radius: 6px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        border-radius: 8px;
+        padding: 0.75rem 1.25rem; /* Larger padding for better touch targets */
+        font-weight: 500;
+        font-size: 0.95rem;
         transition: all 0.2s;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
         width: 100%;
     }
-
+    
     div.stButton > button:hover {
-        background-color: #1557B0;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        background-color: var(--primary-hover);
         transform: translateY(-1px);
-        color: white !important;
+        box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+    }
+
+    /* PREDICTION BOX */
+    .prediction-display {
+        background: white;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        margin-top: 10px;
     }
     
-    /* --- METRICS & STATUS --- */
-    div[data-testid="stMetric"] {
-        background-color: white;
-        padding: 15px;
+    .prediction-text {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 3rem;
+        font-weight: 700;
+        color: var(--primary);
+        letter-spacing: 0.5rem;
+        line-height: 1;
+        margin: 10px 0;
+    }
+    
+    .confidence-tag {
+        display: inline-block;
+        background: #DCFCE7;
+        color: #166534;
+        padding: 4px 12px;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    /* IMAGES */
+    img {
         border-radius: 8px;
-        border: 1px solid #E0E0E0;
     }
     
-    div[data-testid="stMetricValue"] {
-        color: #1A73E8 !important; /* Blue numbers */
-    }
-    
-    /* --- TAB STYLING --- */
-    div[data-baseweb="tab-list"] {
-        gap: 20px;
-        background-color: transparent;
-    }
-    
-    div[data-baseweb="tab"] {
-        color: #5F6368;
-    }
-    
-    div[data-baseweb="tab"][aria-selected="true"] {
-        color: #1A73E8;
-        border-bottom-color: #1A73E8;
+    /* FIX FOR INPUTS */
+    /* Target only text inputs, not everything */
+    div[data-baseweb="input"] {
+        background-color: white;
+        border-radius: 6px;
     }
 
 </style>
 """, unsafe_allow_html=True)
 
+# --- HELPER: CUSTOM LOADER ---
+def render_custom_loader():
+    file_path = "assets/loading.gif"
+    if os.path.exists(file_path):
+        with open(file_path, "rb") as f:
+            data_url = base64.b64encode(f.read()).decode("utf-8")
+        return st.markdown(
+            f'<div style="display: flex; justify-content: center; padding: 2rem;"><img src="data:image/gif;base64,{data_url}" width="40"></div>',
+            unsafe_allow_html=True,
+        )
+    return st.spinner("Processing...")
+
+# --- HELPER: IMAGE TO HTML ---
+def get_image_html(img_array):
+    _, buffer = cv2.imencode('.png', img_array)
+    b64 = base64.b64encode(buffer).decode('utf-8')
+    return f"data:image/png;base64,{b64}"
+
 # --- SIDEBAR ---
 with st.sidebar:
-    st.markdown("### 🧠 CAPTCHArd")
-    st.caption("v2.0 Professional")
-    st.markdown("---")
+    if os.path.exists("./assets/full_logo_colour.png"):
+        st.image("./assets/full_logo_colour.png", use_container_width=True)
+    elif os.path.exists("./assets/logo.png"):
+        st.image("./assets/logo.png", width=60)
+        st.markdown("### CAPTCHArd")
+    else:
+        st.markdown("### CAPTCHArd")
     
-    # Navigation
-    mode = st.radio("MENU", ["Live Inference", "Training Studio"], label_visibility="collapsed")
+    st.markdown(" ")
+    st.markdown('<p class="section-title" style="margin-bottom: 0.5rem;">Platform</p>', unsafe_allow_html=True)
+    mode = st.radio("Platform", ["Live Dashboard", "Training Studio"], label_visibility="collapsed")
     
-    st.markdown("---")
-    with st.expander("About System"):
-        st.info("Robust Computer Vision segmentation + CNN classification engine.")
+    # Removed the markdown "---" separator as it was causing the artifact box
+    st.write("") 
+    st.caption("v3.0 Enterprise Edition")
 
-# --- SESSION STATE INITIALIZATION ---
+# --- INIT SESSION ---
 if 'model' not in st.session_state or st.session_state.model is None:
     st.session_state.model = backend.load_pretrained_model()
 
@@ -152,11 +195,8 @@ if 'dataset_uploaded' not in st.session_state:
 def load_uploaded_dataset(uploaded_file):
     with zipfile.ZipFile(uploaded_file, 'r') as z:
         z.extractall("temp_dataset")
-        
-    data = []
-    labels = []
+    data, labels = [], []
     valid_count = 0
-    
     for root, dirs, files in os.walk("temp_dataset"):
         for f in files:
             if f.endswith(('.png', '.jpg')):
@@ -177,201 +217,228 @@ def load_uploaded_dataset(uploaded_file):
 def save_and_update_model(model):
     try:
         os.makedirs('model', exist_ok=True)
-        save_path = os.path.join('model', 'final_captcha_model.h5')
-        model.save(save_path)
+        path = os.path.join('model', 'final_captcha_model.h5')
+        model.save(path)
         st.session_state.model = model
-        st.toast(f"Model saved to {save_path}!")
-        st.success("✅ Model saved successfully.")
+        st.toast("Model saved successfully")
     except Exception as e:
-        st.error(f"Failed to save model: {e}")
+        st.error(f"Save failed: {e}")
 
-# ==========================================
-# MODE 1: LIVE INFERENCE
-# ==========================================
-if mode == "Live Inference":
-    # Custom Hero Header (Using our new css-card class)
-    st.markdown("""
-        <div class="css-card">
-            <h1 style='margin:0; color: #1A73E8 !important; font-size: 2.2rem;'>🔮 Live Captcha Solver</h1>
-            <p style='margin:0; color: #5F6368;'>Connect to the source, segment digits, and predict sequence in real-time.</p>
-        </div>
-    """, unsafe_allow_html=True)
+# =========================================================
+#  MODE 1: LIVE DASHBOARD
+# =========================================================
+if mode == "Live Dashboard":
     
-    # Main Card Container
-    with st.container():
-        # Adjusted column ratio and alignment logic
-        col_status, col_btn = st.columns([2, 1])
-        
-        with col_status:
-            if st.session_state.model is not None:
-                st.success("✅ **System Online:** Model loaded successfully.")
-            else:
-                st.error("⚠️ **System Offline:** No model found. Please train in Studio.")
-                
-        with col_btn:
-            # FIX: Added Spacer to push button down to align with the Status box
-            st.markdown('<div style="height: 6px;"></div>', unsafe_allow_html=True)
-            fetch_btn = st.button("FETCH CAPTCHA", use_container_width=True)
+    st.markdown("""
+    <div style="margin-bottom: 2rem;">
+        <h1 style="margin-bottom: 0.5rem;">Live Inference Dashboard</h1>
+        <p style="color: #64748B;">Real-time computer vision pipeline for security analysis.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-        if fetch_btn:
-            st.markdown("---")
-            fetcher = backend.CaptchaFetcher()
-            with st.spinner("Connecting to source..."):
-                img_bytes, error = fetcher.fetch_single_image()
+    # --- ACTION BAR ---
+    # We use vertical_alignment="center" to perfectly align the button with the text box
+    col_status, col_action = st.columns([3, 1], gap="medium", vertical_alignment="center")
+    
+    with col_status:
+        # Generate the status HTML content in Python
+        status_content = ""
+        if st.session_state.model:
+            status_content = '<span style="color: #166534; font-weight: 500;">● Online</span>: Model loaded and ready for inference.'
+        else:
+            status_content = '<span style="color: #DC2626; font-weight: 500;">● Offline</span>: No model detected.'
             
-            if error:
-                st.error(f"Connection Error: {error}")
-            else:
-                nparr = np.frombuffer(img_bytes, np.uint8)
-                original_img = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE)
-                _, cleaned = backend.preprocess_captcha_v2(io.BytesIO(img_bytes))
-                
-                # Visual Row
-                col_a, col_b = st.columns(2)
-                with col_a:
-                    st.caption("Raw Source")
-                    # FIX: Replaced use_column_width with use_container_width
-                    st.image(original_img, use_container_width=True)
-                with col_b:
-                    st.caption("Processed Binary")
-                    # FIX: Replaced use_column_width with use_container_width
-                    st.image(cleaned, use_container_width=True)
-                    
+        # Render the ENTIRE card in one go. No split markdown.
+        st.markdown(f"""
+        <div class="glass-card" style="padding: 20px; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <span class="section-title" style="margin-right: 15px;">System Status</span>
+                {status_content}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col_action:
+        # Button stands alone (no wrapping div to break it)
+        if st.button("Fetch Captcha", use_container_width=True):
+            st.session_state.trigger_fetch = True
+        else:
+            st.session_state.trigger_fetch = False
+
+    # --- MAIN VISUAL STAGE ---
+    if st.session_state.get('trigger_fetch'):
+        
+        loader_ph = st.empty()
+        with loader_ph:
+            render_custom_loader()
+            
+        fetcher = backend.CaptchaFetcher()
+        img_bytes, error = fetcher.fetch_single_image()
+        time.sleep(0.8)
+        loader_ph.empty()
+
+        if error:
+            st.error(f"Connection Error: {error}")
+        else:
+            nparr = np.frombuffer(img_bytes, np.uint8)
+            original_img = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE)
+            _, cleaned = backend.preprocess_captcha_v2(io.BytesIO(img_bytes))
+            
+            # Use columns for layout
+            col_visuals, col_prediction = st.columns([2, 1], gap="large")
+            
+            with col_visuals:
                 digits = backend.segment_characters_robust(cleaned)
                 
+                # HTML Construction for images
+                src_html = get_image_html(original_img)
+                bin_html = get_image_html(cleaned)
+                
+                digits_divs = ""
                 if len(digits) == 5:
-                    st.markdown("#### Neural Segmentation")
-                    cols = st.columns(5)
-                    for i, d in enumerate(digits):
-                        with cols[i]:
-                            # FIX: Replaced use_column_width with use_container_width
-                            st.image(d, use_container_width=True)
-                    
-                    if st.session_state.model:
-                        prediction = backend.predict_sequence(st.session_state.model, digits)
-                        st.markdown(f"""
-                        <div style='background-color: #E8F0FE; padding: 1rem; border-radius: 8px; text-align: center; margin-top: 1rem; border: 1px solid #1A73E8;'>
-                            <h2 style='margin:0; color: #1A73E8 !important; font-family: monospace; letter-spacing: 4px;'>{prediction}</h2>
-                            <small style='color: #1A73E8;'>CONFIDENCE SCORE: 99.8%</small>
+                    for d in digits:
+                        digits_divs += f'<div style="flex: 1; text-align: center;"><img src="{get_image_html(d)}" style="width: 100%; border-radius: 4px; border: 1px solid #E2E8F0;"></div>'
+                
+                # Render Visuals Card
+                st.markdown(f"""
+                <div class="glass-card">
+                    <p class="section-title">Visual Analysis</p>
+                    <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                        <div style="flex: 1;">
+                            <div style="font-size: 0.8rem; color: #64748B; margin-bottom: 5px; font-weight: 500;">Raw Input</div>
+                            <img src="{src_html}" style="width: 100%; border-radius: 8px; border: 1px solid #E2E8F0;">
                         </div>
-                        """, unsafe_allow_html=True)
-                else:
-                    st.warning(f"Segmentation Warning: Detected {len(digits)}/5 digits.")
+                        <div style="flex: 1;">
+                            <div style="font-size: 0.8rem; color: #64748B; margin-bottom: 5px; font-weight: 500;">Binary Mask</div>
+                            <img src="{bin_html}" style="width: 100%; border-radius: 8px; border: 1px solid #E2E8F0;">
+                        </div>
+                    </div>
+                    <div style="border-top: 1px solid #E2E8F0; margin: 15px 0;"></div>
+                    <p class="section-title" style="margin-bottom: 10px;">Segmentation Stream</p>
+                    <div style="display: flex; gap: 10px;">
+                        {digits_divs}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
 
-# ==========================================
-# MODE 2: TRAINING STUDIO
-# ==========================================
+            with col_prediction:
+                if len(digits) == 5 and st.session_state.model:
+                    prediction = backend.predict_sequence(st.session_state.model, digits)
+                    # Render Prediction Card
+                    st.markdown(f"""
+                    <div class="glass-card">
+                        <p class="section-title">Inference</p>
+                        <div class="prediction-display">
+                            <div class="prediction-text">{prediction}</div>
+                            <div class="confidence-tag">High Confidence</div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.warning("Segmentation Failed")
+
+# =========================================================
+#  MODE 2: TRAINING STUDIO
+# =========================================================
 elif mode == "Training Studio":
     st.markdown("""
-        <div class="css-card">
-            <h1 style='margin:0; color: #1A73E8 !important; font-size: 2.2rem;'>🛠️ Training Studio</h1>
-            <p style='margin:0; color: #5F6368;'>Design, Train, and Optimize your CNN Architecture.</p>
-        </div>
+    <div style="margin-bottom: 2rem;">
+        <h1 style="margin-bottom: 0.5rem;">Training Studio</h1>
+        <p style="color: #64748B;">Design, train, and optimize CNN architectures.</p>
+    </div>
     """, unsafe_allow_html=True)
     
-    # 1. Dataset Card
-    with st.container():
-        st.markdown("#### 📁 1. Dataset Upload")
-        upload = st.file_uploader("Upload labeled Images (ZIP)", type="zip")
-        
+    # 1. DATASET
+    # Using a clean Markdown block for the header, no split divs
+    st.markdown("""
+    <div class="glass-card" style="margin-bottom: 20px;">
+        <p class="section-title" style="margin-bottom: 10px;">Data Ingestion</p>
+        <p style="font-size: 0.9rem; color: #64748B;">Upload your labeled dataset to begin.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col_upload, col_stats = st.columns([2, 1])
+    
+    with col_upload:
+        upload = st.file_uploader("Upload Dataset (ZIP)", type="zip", label_visibility="collapsed")
+    
+    with col_stats:
         if upload and not st.session_state.dataset_uploaded:
-            with st.spinner("Processing Dataset..."):
+            with st.spinner("Processing..."):
                 X, y, count = load_uploaded_dataset(upload)
                 st.session_state.X = X
                 st.session_state.y = y
                 st.session_state.dataset_uploaded = True
                 st.session_state.sample_count = count
-        
+                
         if st.session_state.dataset_uploaded:
-            st.success(f"✅ Ready: {st.session_state.sample_count} Samples Loaded")
+             st.success(f"Ready: {st.session_state.sample_count} Samples")
+        else:
+             st.info("Waiting for upload...")
 
     if st.session_state.dataset_uploaded:
-        X = st.session_state.X
-        y = st.session_state.y
+        X, y = st.session_state.X, st.session_state.y
         y_encoded = to_categorical(y, 10)
         X_train, X_test, y_train, y_test = train_test_split(X, y_encoded, test_size=0.2, random_state=42)
         
-        # 2. Config Card
-        with st.container():
-            st.markdown("#### ⚙️ 2. Hyperparameters")
-            tab1, tab2 = st.tabs(["MANUAL TUNING", "BAYESIAN AUTO-TUNING"])
-            
-            # --- MANUAL ---
-            with tab1:
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    f1 = st.slider("Conv 1 Filters", 16, 128, 32, step=16)
-                    lr = st.number_input("Learning Rate", value=0.001, format="%.5f")
-                with col2:
-                    f2 = st.slider("Conv 2 Filters", 32, 128, 64, step=32)
+        st.markdown('<div style="height: 20px;"></div>', unsafe_allow_html=True)
+        
+        # Tabs container
+        tab1, tab2 = st.tabs(["Manual Tuning", "Bayesian Optimization"])
+        
+        with tab1:
+            st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
+            # We use st.container to group controls, keeping them out of tricky HTML
+            with st.container():
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    st.markdown("**Convolution**")
+                    f1 = st.slider("Layer 1 Filters", 16, 64, 32, 16)
+                    f2 = st.slider("Layer 2 Filters", 32, 128, 64, 32)
+                with c2:
+                    st.markdown("**Dense**")
+                    dense = st.select_slider("Neurons", options=[32, 64, 128, 256, 512], value=64)
+                    dropout = st.slider("Dropout", 0.0, 0.8, 0.5)
+                with c3:
+                    st.markdown("**Training**")
+                    lr = st.number_input("Learning Rate", value=0.001, format="%.4f")
                     epochs = st.slider("Epochs", 5, 50, 10)
-                with col3:
-                    dense = st.slider("Dense Units", 32, 512, 64, step=32)
-                    dropout = st.slider("Dropout", 0.0, 0.8, 0.4)
                 
-                if st.button("🚀 START TRAINING", use_container_width=True):
+                st.markdown("---")
+                
+                if st.button("Start Training", use_container_width=True):
                     model = training_utils.build_manual_model(f1, f2, dense, dropout, lr)
-                    plot_placeholder = st.empty()
-                    
+                    plot_area = st.empty()
                     with st.spinner("Training..."):
-                        history = model.fit(
-                            X_train, y_train,
-                            epochs=epochs,
-                            batch_size=32,
-                            validation_data=(X_test, y_test),
-                            callbacks=[training_utils.StreamlitPlotCallback(plot_placeholder)],
-                            verbose=0
-                        )
+                        model.fit(X_train, y_train, epochs=epochs, validation_data=(X_test, y_test),
+                                  callbacks=[training_utils.StreamlitPlotCallback(plot_area)], verbose=0)
                     save_and_update_model(model)
 
-            # --- BAYESIAN ---
-            with tab2:
-                col_info, col_slider = st.columns([2, 1])
-                with col_info:
-                    st.info("Bayesian Optimization will efficiently search for the best model architecture.")
-                with col_slider:
-                    max_trials = st.slider("Total Trials", min_value=5, max_value=50, value=10)
-                
-                if st.button("✨ START OPTIMIZATION", use_container_width=True):
-                    # Layout for Real-time Feedback
-                    st.markdown("### Optimization Progress")
-                    col_status, col_leaderboard = st.columns([1, 2])
+        with tab2:
+            st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
+            col_info, col_run = st.columns([2, 1])
+            with col_info:
+                st.info("Bayesian Optimization automatically finds the best architecture.")
+                trials = st.slider("Max Trials", 5, 50, 10)
+            
+            with col_run:
+                st.markdown("<br>", unsafe_allow_html=True) # Spacer for alignment
+                if st.button("Start Auto-Tuning", use_container_width=True):
+                    if os.path.exists('my_dir'): shutil.rmtree('my_dir')
+                    col_stat, col_chart = st.columns([1, 2])
+                    with col_stat: st_stat = st.container()
+                    with col_chart: st_metric = st.container()
                     
-                    with col_status:
-                        st_status = st.container()
-                    with col_leaderboard:
-                        st_metrics = st.container()
-                    
-                    if os.path.exists('my_dir'):
-                        shutil.rmtree('my_dir')
-                    
-                    tuner = training_utils.StreamlitTuner(
-                        st_status_container=st_status,
-                        st_metrics_container=st_metrics,
-                        hypermodel=training_utils.build_tuner_model,
-                        objective='val_accuracy',
-                        max_trials=max_trials,
-                        executions_per_trial=1,
-                        directory='my_dir',
-                        project_name='captcha_tuning_v2'
-                    )
-                    
+                    tuner = training_utils.StreamlitTuner(st_stat, st_metric, hypermodel=training_utils.build_tuner_model,
+                                                        objective='val_accuracy', max_trials=trials,
+                                                        executions_per_trial=1, directory='my_dir', project_name='cap_v3')
                     tuner.search(X_train, y_train, epochs=5, validation_data=(X_test, y_test), verbose=0)
                     
-                    best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
-                    st.success("🎉 Optimization Complete!")
+                    best_hps = tuner.get_best_hyperparameters()[0]
+                    st.success("Optimization Complete")
                     
-                    st.write("Retraining best model for final deployment...")
                     model = tuner.hypermodel.build(best_hps)
-                    final_plot = st.empty()
-                    
-                    model.fit(
-                        X_train, y_train,
-                        epochs=15,
-                        validation_data=(X_test, y_test),
-                        callbacks=[training_utils.StreamlitPlotCallback(final_plot)],
-                        verbose=0
-                    )
+                    plot_final = st.empty()
+                    model.fit(X_train, y_train, epochs=15, validation_data=(X_test, y_test),
+                              callbacks=[training_utils.StreamlitPlotCallback(plot_final)], verbose=0)
                     save_and_update_model(model)
-    else:
-        st.warning("👆 Waiting for dataset upload...")
