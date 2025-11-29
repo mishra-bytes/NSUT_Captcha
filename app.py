@@ -96,21 +96,13 @@ st.markdown("""
         transition: all 0.2s;
         box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
         width: 100%;
-        height: 50px;
+        height: 50px; /* Fixed height to match text box visually */
     }
     
     div.stButton > button:hover {
         background-color: var(--primary-hover);
         transform: translateY(-1px);
         box-shadow: 0 6px 12px rgba(37, 99, 235, 0.3);
-    }
-    
-    /* Stop Button Styling */
-    div.stButton > button.stop-btn {
-        background-color: #EF4444 !important;
-    }
-    div.stButton > button.stop-btn:hover {
-        background-color: #DC2626 !important;
     }
 
     /* PREDICTION BOX */
@@ -155,18 +147,28 @@ st.markdown("""
         border: 1px solid rgba(0,0,0,0.1);
     }
 
-    /* GRID FOR IMAGES */
+    /* GRID FOR IMAGES - Flexbox ensures single line */
     .visual-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
+        display: flex;
         gap: 20px;
         margin-bottom: 24px;
+        width: 100%;
+    }
+    
+    .visual-item {
+        flex: 1;
+        min-width: 0; /* Prevents overflow */
     }
     
     .digit-grid {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
+        display: flex;
         gap: 12px;
+        justify-content: space-between;
+    }
+    
+    .digit-item {
+        flex: 1;
+        text-align: center;
     }
 
 </style>
@@ -327,7 +329,7 @@ if mode == "Live Dashboard":
             digits_divs = ""
             if len(digits) == 5:
                 for d in digits:
-                    digits_divs += f'<div style="text-align: center;"><img src="{get_image_html(d)}" style="width: 100%; border-radius: 8px; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 2px 4px rgba(0,0,0,0.05);"></div>'
+                    digits_divs += f'<div class="digit-item"><img src="{get_image_html(d)}" style="width: 100%; border-radius: 8px; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 2px 4px rgba(0,0,0,0.05);"></div>'
             
             with visual_placeholder.container():
                 st.markdown(f"""
@@ -335,11 +337,11 @@ if mode == "Live Dashboard":
                     <p class="section-title">Visual Analysis</p>
                     
                     <div class="visual-grid">
-                        <div>
+                        <div class="visual-item">
                             <div style="font-size: 0.75rem; color: #64748B; margin-bottom: 8px; font-weight: 600; text-transform: uppercase;">Raw Input</div>
                             <img src="{src_html}" style="width: 100%; border-radius: 12px; border: 1px solid rgba(0,0,0,0.05);">
                         </div>
-                        <div>
+                        <div class="visual-item">
                             <div style="font-size: 0.75rem; color: #64748B; margin-bottom: 8px; font-weight: 600; text-transform: uppercase;">Binary Mask</div>
                             <img src="{bin_html}" style="width: 100%; border-radius: 12px; border: 1px solid rgba(0,0,0,0.05);">
                         </div>
@@ -378,9 +380,10 @@ if mode == "Live Dashboard":
                  st.warning("Segmentation Failed")
     else:
         with visual_placeholder.container():
+             # Removed "Waiting for input..." text and box as requested
              st.markdown("""
              <div class="glass-card" style="height: 300px; display: flex; align-items: center; justify-content: center; color: #94A3B8;">
-                <div>Waiting for input...</div>
+                <div style="opacity: 0;">Spacer</div>
              </div>
              """, unsafe_allow_html=True)
 
