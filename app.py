@@ -7,7 +7,6 @@ import io
 import shutil
 import time
 import base64
-import pandas as pd
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import to_categorical
 
@@ -467,8 +466,9 @@ elif mode == "Training Studio":
             st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
             
             # --- CENTRALLY ALIGNED OPTIMIZATION PANEL ---
-            # 1. Header & Controls
+            # Using 3 columns [1, 2, 1] to center the middle content
             _, col_center, _ = st.columns([1, 2, 1])
+            
             with col_center:
                 st.markdown("""
                 <div class="glass-card" style="margin-bottom: 24px;">
@@ -491,28 +491,28 @@ elif mode == "Training Studio":
                 if 'tuning_active' not in st.session_state:
                     st.session_state.tuning_active = False
                 
-                # START BUTTON
+                # START BUTTON (Only visible if NOT active)
                 if not st.session_state.tuning_active:
                     if st.button("🚀 Start Auto-Tuning", use_container_width=True):
                         st.session_state.tuning_active = True
                         if os.path.exists('my_dir'): shutil.rmtree('my_dir')
-                        # Rerun to show stop button and layout
                         st.rerun()
             
-            # 2. RUNNING LAYOUT (Two Columns: Graph | Leaderboard)
+            # 2. RUNNING LAYOUT (Red Boxes Area)
             if st.session_state.tuning_active:
                 
                 # STOP BUTTON (Centered)
                 _, c_stop, _ = st.columns([1, 1, 1])
                 with c_stop:
+                    # Provide a way to stop
                     if st.button("⛔ Stop Tuning & Save Best", use_container_width=True):
                         st.session_state.tuning_active = False
                         st.rerun()
 
-                st.markdown("<hr style='opacity: 0.3'>", unsafe_allow_html=True)
+                st.markdown("<hr style='opacity: 0.3; margin: 30px 0;'>", unsafe_allow_html=True)
 
-                # The Two-Column Grid for Results
-                col_graph, col_board = st.columns([1, 1], gap="medium")
+                # The Two-Column Grid for Results (Your Red Boxes)
+                col_graph, col_board = st.columns(2, gap="large")
                 
                 with col_graph:
                     live_placeholder = st.empty()
@@ -525,7 +525,6 @@ elif mode == "Training Studio":
                      st.info("Initializing search space...")
                 
                 # RUN TUNER
-                # We need to wrap this in a try-except block to handle the stop interruption gracefully if needed
                 try:
                     tuner = training_utils.StreamlitTuner(live_placeholder, leaderboard_placeholder, hypermodel=training_utils.build_tuner_model,
                                                         objective='val_accuracy', max_trials=trials,
@@ -541,9 +540,7 @@ elif mode == "Training Studio":
                     st.error(f"Optimization Interrupted: {e}")
 
             # 3. RESULTS (Centered Bottom) - Only show if not active and we have results
-            # Logic: We assume if tuning_active became False and we have a model, we are done
             if not st.session_state.tuning_active and os.path.exists('my_dir'):
-                # We can try to load the best model if it exists
                 try:
                     tuner = training_utils.StreamlitTuner(st.empty(), st.empty(), hypermodel=training_utils.build_tuner_model,
                                                         objective='val_accuracy', max_trials=trials,
@@ -569,4 +566,4 @@ elif mode == "Training Studio":
                             # Clean up so we don't re-trigger this block constantly
                             shutil.rmtree('my_dir')
                 except:
-                    pass # Directory might be empty or cleared
+                    pass
