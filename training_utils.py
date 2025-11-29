@@ -82,8 +82,8 @@ class StreamlitTuner(kt.BayesianOptimization):
         callbacks.append(TunerUpdateCallback(status_box, chart_box, trial.trial_id))
         kwargs['callbacks'] = callbacks
         
-        # 3. Run the standard Keras Tuner trial
-        super().run_trial(trial, *args, **kwargs)
+        # 3. Run the standard Keras Tuner trial logic AND RETURN IT (Fix is here)
+        return super().run_trial(trial, *args, **kwargs)
         
     def on_trial_end(self, trial):
         super().on_trial_end(trial)
