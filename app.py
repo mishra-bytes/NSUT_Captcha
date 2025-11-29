@@ -7,6 +7,7 @@ import io
 import shutil
 import time
 import base64
+import pandas as pd
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import to_categorical
 
@@ -71,6 +72,7 @@ st.markdown("""
         padding: 24px;
         box-shadow: var(--glass-shadow);
         margin-bottom: 0px; /* Reset margin to prevent ghost spacing */
+        height: 100%;
     }
 
     /* TYPOGRAPHY */
@@ -102,6 +104,14 @@ st.markdown("""
         background-color: var(--primary-hover);
         transform: translateY(-1px);
         box-shadow: 0 6px 12px rgba(37, 99, 235, 0.3);
+    }
+    
+    /* Stop Button Styling */
+    div.stButton > button.stop-btn {
+        background-color: #EF4444 !important;
+    }
+    div.stButton > button.stop-btn:hover {
+        background-color: #DC2626 !important;
     }
 
     /* PREDICTION BOX */
@@ -457,9 +467,8 @@ elif mode == "Training Studio":
             st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
             
             # --- CENTRALLY ALIGNED OPTIMIZATION PANEL ---
-            # Using 3 columns [1, 2, 1] to center the middle content
+            # 1. Header & Controls
             _, col_center, _ = st.columns([1, 2, 1])
-            
             with col_center:
                 st.markdown("""
                 <div class="glass-card" style="margin-bottom: 24px;">
@@ -472,49 +481,92 @@ elif mode == "Training Studio":
                 
                 c_opt1, c_opt2 = st.columns(2)
                 with c_opt1:
-                    trials = st.slider("Max Trials", 5, 50, 10, help="Total number of different models to test.")
+                    trials = st.slider("Max Trials", 5, 50, 10)
                 with c_opt2:
-                    epochs_per_trial = st.slider("Epochs / Trial", 5, 50, 5, help="How long to train each model.")
+                    epochs_per_trial = st.slider("Epochs / Trial", 5, 50, 5)
                 
                 st.markdown('<div style="height: 15px;"></div>', unsafe_allow_html=True)
                 
-                if st.button("🚀 Start Auto-Tuning", use_container_width=True):
-                    if os.path.exists('my_dir'): shutil.rmtree('my_dir')
+                # Start / Stop Logic
+                if 'tuning_active' not in st.session_state:
+                    st.session_state.tuning_active = False
+                
+                # START BUTTON
+                if not st.session_state.tuning_active:
+                    if st.button("🚀 Start Auto-Tuning", use_container_width=True):
+                        st.session_state.tuning_active = True
+                        if os.path.exists('my_dir'): shutil.rmtree('my_dir')
+                        # Rerun to show stop button and layout
+                        st.rerun()
+            
+            # 2. RUNNING LAYOUT (Two Columns: Graph | Leaderboard)
+            if st.session_state.tuning_active:
+                
+                # STOP BUTTON (Centered)
+                _, c_stop, _ = st.columns([1, 1, 1])
+                with c_stop:
+                    if st.button("⛔ Stop Tuning & Save Best", use_container_width=True):
+                        st.session_state.tuning_active = False
+                        st.rerun()
+
+                st.markdown("<hr style='opacity: 0.3'>", unsafe_allow_html=True)
+
+                # The Two-Column Grid for Results
+                col_graph, col_board = st.columns([1, 1], gap="medium")
+                
+                with col_graph:
+                    live_placeholder = st.empty()
                     
-                    # Layout containers: 2 Columns for Live Monitor and Leaderboard
-                    col_monitor, col_leaderboard = st.columns(2, gap="medium")
-                    
-                    with col_monitor:
-                        live_placeholder = st.empty()
-                        
-                    with col_leaderboard:
-                        leaderboard_placeholder = st.empty()
-                    
-                    # Initialize
-                    with live_placeholder.container():
-                         st.info("Initializing search space...")
-                    
+                with col_board:
+                    leaderboard_placeholder = st.empty()
+                
+                # Initialize Placeholders
+                with live_placeholder.container():
+                     st.info("Initializing search space...")
+                
+                # RUN TUNER
+                # We need to wrap this in a try-except block to handle the stop interruption gracefully if needed
+                try:
                     tuner = training_utils.StreamlitTuner(live_placeholder, leaderboard_placeholder, hypermodel=training_utils.build_tuner_model,
                                                         objective='val_accuracy', max_trials=trials,
                                                         executions_per_trial=1, directory='my_dir', project_name='cap_v3')
                     
                     tuner.search(X_train, y_train, epochs=epochs_per_trial, validation_data=(X_test, y_test), verbose=0)
                     
+                    # If finished naturally:
+                    st.session_state.tuning_active = False
+                    st.rerun()
+                    
+                except Exception as e:
+                    st.error(f"Optimization Interrupted: {e}")
+
+            # 3. RESULTS (Centered Bottom) - Only show if not active and we have results
+            # Logic: We assume if tuning_active became False and we have a model, we are done
+            if not st.session_state.tuning_active and os.path.exists('my_dir'):
+                # We can try to load the best model if it exists
+                try:
+                    tuner = training_utils.StreamlitTuner(st.empty(), st.empty(), hypermodel=training_utils.build_tuner_model,
+                                                        objective='val_accuracy', max_trials=trials,
+                                                        executions_per_trial=1, directory='my_dir', project_name='cap_v3')
                     best_hps = tuner.get_best_hyperparameters()[0]
                     
-                    model = tuner.hypermodel.build(best_hps)
-                    plot_final = st.empty()
-                    model.fit(X_train, y_train, epochs=15, validation_data=(X_test, y_test),
-                              callbacks=[training_utils.StreamlitPlotCallback(plot_final)], verbose=0)
-                    
-                    if save_and_update_model(model):
-                        # Centered Result Message
-                        st.markdown("<br>", unsafe_allow_html=True)
-                        _, c_res, _ = st.columns([1, 2, 1])
-                        with c_res:
-                            st.markdown("""
-                            <div class="glass-card" style="background-color: rgba(220, 252, 231, 0.6); border: 1px solid #86EFAC;">
-                                <h4 style="color: #166534; text-align: center; margin: 0;">🎉 Optimization Complete & Model Saved!</h4>
-                            </div>
-                            """, unsafe_allow_html=True)
-                        st.balloons()
+                    if best_hps:
+                        # Retrain best model briefly to finalize
+                        model = tuner.hypermodel.build(best_hps)
+                        plot_final = st.empty() # Hidden plot
+                        model.fit(X_train, y_train, epochs=15, validation_data=(X_test, y_test), verbose=0)
+                        
+                        if save_and_update_model(model):
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            _, c_res, _ = st.columns([1, 2, 1])
+                            with c_res:
+                                st.markdown("""
+                                <div class="glass-card" style="background-color: rgba(220, 252, 231, 0.6); border: 1px solid #86EFAC;">
+                                    <h4 style="color: #166534; text-align: center; margin: 0;">🎉 Optimization Complete & Model Saved!</h4>
+                                </div>
+                                """, unsafe_allow_html=True)
+                            st.balloons()
+                            # Clean up so we don't re-trigger this block constantly
+                            shutil.rmtree('my_dir')
+                except:
+                    pass # Directory might be empty or cleared
