@@ -36,7 +36,7 @@ st.markdown("""
         --text-sub: #64748B;
         --glass-bg: rgba(255, 255, 255, 0.65);
         --glass-border: 1px solid rgba(255, 255, 255, 0.9);
-        --glass-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
     }
 
     html, body, [class*="css"] {
@@ -70,7 +70,7 @@ st.markdown("""
         border-radius: 16px;
         padding: 24px;
         box-shadow: var(--glass-shadow);
-        margin-bottom: 24px; /* Ensure spacing between elements */
+        margin-bottom: 0px; /* Reset margin to prevent ghost spacing */
     }
 
     /* TYPOGRAPHY */
@@ -481,12 +481,16 @@ elif mode == "Training Studio":
                 if st.button("🚀 Start Auto-Tuning", use_container_width=True):
                     if os.path.exists('my_dir'): shutil.rmtree('my_dir')
                     
-                    # Create two placeholders for the layout
-                    # We use st.empty() so we can clear them if needed
-                    live_placeholder = st.empty()
-                    leaderboard_placeholder = st.empty()
+                    # Layout containers: 2 Columns for Live Monitor and Leaderboard
+                    col_monitor, col_leaderboard = st.columns(2, gap="medium")
                     
-                    # Initialize the layout with columns inside the placeholders
+                    with col_monitor:
+                        live_placeholder = st.empty()
+                        
+                    with col_leaderboard:
+                        leaderboard_placeholder = st.empty()
+                    
+                    # Initialize
                     with live_placeholder.container():
                          st.info("Initializing search space...")
                     
@@ -504,9 +508,13 @@ elif mode == "Training Studio":
                               callbacks=[training_utils.StreamlitPlotCallback(plot_final)], verbose=0)
                     
                     if save_and_update_model(model):
-                        st.markdown("""
-                        <div class="glass-card" style="background-color: #DCFCE7; border: 1px solid #86EFAC;">
-                            <h4 style="color: #166534; text-align: center; margin: 0;">🎉 Optimization Complete & Model Saved!</h4>
-                        </div>
-                        """, unsafe_allow_html=True)
+                        # Centered Result Message
+                        st.markdown("<br>", unsafe_allow_html=True)
+                        _, c_res, _ = st.columns([1, 2, 1])
+                        with c_res:
+                            st.markdown("""
+                            <div class="glass-card" style="background-color: rgba(220, 252, 231, 0.6); border: 1px solid #86EFAC;">
+                                <h4 style="color: #166534; text-align: center; margin: 0;">🎉 Optimization Complete & Model Saved!</h4>
+                            </div>
+                            """, unsafe_allow_html=True)
                         st.balloons()
