@@ -17,7 +17,7 @@ import training_utils
 # --- PAGE CONFIG ---
 st.set_page_config(
     page_title="CAPTCHArd",
-    page_icon="assets/logo_white.png",
+    page_icon="assets/logo.png",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -36,7 +36,7 @@ st.markdown("""
         --text-sub: #64748B;
         --glass-bg: rgba(255, 255, 255, 0.65);
         --glass-border: 1px solid rgba(255, 255, 255, 0.9);
-        --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        --glass-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     }
 
     html, body, [class*="css"] {
@@ -70,7 +70,7 @@ st.markdown("""
         border-radius: 16px;
         padding: 24px;
         box-shadow: var(--glass-shadow);
-        margin-bottom: 24px; /* Reset margin to prevent ghost spacing */
+        margin-bottom: 24px; /* Ensure spacing between elements */
     }
 
     /* TYPOGRAPHY */
@@ -243,8 +243,10 @@ def save_and_update_model(model):
         model.save(path)
         st.session_state.model = model
         st.toast("Model saved successfully")
+        return True
     except Exception as e:
         st.error(f"Save failed: {e}")
+        return False
 
 # =========================================================
 #  MODE 1: LIVE DASHBOARD
@@ -258,12 +260,12 @@ if mode == "Live Dashboard":
     </div>
     """, unsafe_allow_html=True)
 
-    # --- NEW LAYOUT: LEFT (STATUS + VISUALS) | RIGHT (ACTION + PREDICTION) ---
+    # --- LAYOUT ---
     col_main, col_sidebar = st.columns([7, 3], gap="large")
     
-    # === LEFT COLUMN: MONITORING & VISUALS ===
+    # === LEFT COLUMN ===
     with col_main:
-        # 1. System Status Card
+        # System Status
         status_content = ""
         if st.session_state.model:
             status_content = '<span style="color: #166534; font-weight: 600;">● Online</span>: Model loaded and ready for inference.'
@@ -279,25 +281,21 @@ if mode == "Live Dashboard":
         </div>
         """, unsafe_allow_html=True)
         
-        # 2. Visual Analysis Card (Placeholders to keep layout stable)
         visual_placeholder = st.empty()
 
-    # === RIGHT COLUMN: ACTIONS & RESULTS ===
+    # === RIGHT COLUMN ===
     with col_sidebar:
-        # 1. Action Button
         st.markdown('<div style="height: 0px;"></div>', unsafe_allow_html=True)
         if st.button("Fetch Captcha", use_container_width=True):
             st.session_state.trigger_fetch = True
         else:
-            pass # Keep state
+            pass 
 
-        # 2. Prediction Result Placeholder
         result_placeholder = st.empty()
 
-    # --- EXECUTION LOGIC ---
+    # --- LOGIC ---
     if st.session_state.get('trigger_fetch'):
         
-        # Loader in the Visuals area
         with visual_placeholder.container():
              with st.spinner("Processing..."):
                 time.sleep(0.1) 
@@ -312,10 +310,8 @@ if mode == "Live Dashboard":
             original_img = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE)
             _, cleaned = backend.preprocess_captcha_v2(io.BytesIO(img_bytes))
             
-            # Logic for Segmentation
             digits = backend.segment_characters_robust(cleaned)
             
-            # HTML Prep
             src_html = get_image_html(original_img)
             bin_html = get_image_html(cleaned)
             
@@ -324,7 +320,6 @@ if mode == "Live Dashboard":
                 for d in digits:
                     digits_divs += f'<div style="text-align: center;"><img src="{get_image_html(d)}" style="width: 100%; border-radius: 8px; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 2px 4px rgba(0,0,0,0.05);"></div>'
             
-            # Update Visual Card
             with visual_placeholder.container():
                 st.markdown(f"""
                 <div class="glass-card">
@@ -350,17 +345,14 @@ if mode == "Live Dashboard":
                 </div>
                 """, unsafe_allow_html=True)
             
-            # Prediction Logic
             if len(digits) == 5 and st.session_state.model:
                 prediction = backend.predict_sequence(st.session_state.model, digits)
                 st.session_state.last_prediction = prediction
             else:
                 st.session_state.last_prediction = None
 
-    # Render Result (Persistent)
     if st.session_state.get('trigger_fetch'):
         with result_placeholder.container():
-            # Add top margin to align with the visual card start
             st.markdown('<div style="height: 24px;"></div>', unsafe_allow_html=True)
             
             if st.session_state.get('last_prediction'):
@@ -376,7 +368,6 @@ if mode == "Live Dashboard":
             elif 'last_prediction' in st.session_state and st.session_state.last_prediction is None:
                  st.warning("Segmentation Failed")
     else:
-        # Placeholder state for before fetch
         with visual_placeholder.container():
              st.markdown("""
              <div class="glass-card" style="height: 300px; display: flex; align-items: center; justify-content: center; color: #94A3B8;">
@@ -458,40 +449,46 @@ elif mode == "Training Studio":
                     with st.spinner("Training..."):
                         model.fit(X_train, y_train, epochs=epochs, validation_data=(X_test, y_test),
                                   callbacks=[training_utils.StreamlitPlotCallback(plot_area)], verbose=0)
-                    save_and_update_model(model)
+                    if save_and_update_model(model):
+                        st.success("✅ Model Saved Successfully!")
+                        st.balloons()
 
         with tab2:
             st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
             
-            # --- NEW LAYOUT FOR BAYESIAN SETTINGS ---
-            st.markdown("""
-            <div class="glass-card" style="margin-bottom: 24px;">
-                <p class="section-title">Optimization Settings</p>
-            </div>
-            """, unsafe_allow_html=True)
+            # --- CENTRALLY ALIGNED OPTIMIZATION PANEL ---
+            # Using 3 columns [1, 2, 1] to center the middle content
+            _, col_center, _ = st.columns([1, 2, 1])
             
-            col_opts, col_run = st.columns([2, 1])
-            with col_opts:
-                c_a, c_b = st.columns(2)
-                with c_a:
+            with col_center:
+                st.markdown("""
+                <div class="glass-card" style="margin-bottom: 24px;">
+                    <div style="text-align: center;">
+                        <h3 style="color: #1E293B; margin-bottom: 5px;">Auto-Tuning Engine</h3>
+                        <p style="color: #64748B; font-size: 0.9rem;">Configure search parameters to find the best model.</p>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                c_opt1, c_opt2 = st.columns(2)
+                with c_opt1:
                     trials = st.slider("Max Trials", 5, 50, 10, help="Total number of different models to test.")
-                with c_b:
-                    epochs_per_trial = st.slider("Epochs per Trial", 5, 50, 5, help="How long to train each model.")
-            
-            with col_run:
-                st.markdown('<div style="height: 10px;"></div>', unsafe_allow_html=True)
-                if st.button("Start Auto-Tuning", use_container_width=True):
+                with c_opt2:
+                    epochs_per_trial = st.slider("Epochs / Trial", 5, 50, 5, help="How long to train each model.")
+                
+                st.markdown('<div style="height: 15px;"></div>', unsafe_allow_html=True)
+                
+                if st.button("🚀 Start Auto-Tuning", use_container_width=True):
                     if os.path.exists('my_dir'): shutil.rmtree('my_dir')
                     
                     # Create two placeholders for the layout
-                    # We use st.empty() so we can clear them if needed, but passing them to the Tuner is key
+                    # We use st.empty() so we can clear them if needed
                     live_placeholder = st.empty()
                     leaderboard_placeholder = st.empty()
                     
                     # Initialize the layout with columns inside the placeholders
                     with live_placeholder.container():
-                         # We create a container that the Tuner will fill
-                         st.markdown("### Initializing...")
+                         st.info("Initializing search space...")
                     
                     tuner = training_utils.StreamlitTuner(live_placeholder, leaderboard_placeholder, hypermodel=training_utils.build_tuner_model,
                                                         objective='val_accuracy', max_trials=trials,
@@ -500,10 +497,16 @@ elif mode == "Training Studio":
                     tuner.search(X_train, y_train, epochs=epochs_per_trial, validation_data=(X_test, y_test), verbose=0)
                     
                     best_hps = tuner.get_best_hyperparameters()[0]
-                    st.success("Optimization Complete")
                     
                     model = tuner.hypermodel.build(best_hps)
                     plot_final = st.empty()
                     model.fit(X_train, y_train, epochs=15, validation_data=(X_test, y_test),
                               callbacks=[training_utils.StreamlitPlotCallback(plot_final)], verbose=0)
-                    save_and_update_model(model)
+                    
+                    if save_and_update_model(model):
+                        st.markdown("""
+                        <div class="glass-card" style="background-color: #DCFCE7; border: 1px solid #86EFAC;">
+                            <h4 style="color: #166534; text-align: center; margin: 0;">🎉 Optimization Complete & Model Saved!</h4>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        st.balloons()
